@@ -63,15 +63,15 @@ template_dirs = [
 app.jinja_loader = ChoiceLoader([FileSystemLoader(directory) for directory in template_dirs])
 
 device_config = Config()
-display_manager = DisplayManager(device_config)
-refresh_task = RefreshTask(device_config, display_manager)
+display_manager = None
+refresh_task = None
 
 load_plugins(device_config.get_plugins())
 
 # Store dependencies
 app.config['DEVICE_CONFIG'] = device_config
-app.config['DISPLAY_MANAGER'] = display_manager
-app.config['REFRESH_TASK'] = refresh_task
+app.config['DISPLAY_MANAGER'] = None
+app.config['REFRESH_TASK'] = None
 
 # Set additional parameters
 app.config['MAX_FORM_PARTS'] = 10_000
@@ -91,6 +91,12 @@ if __name__ == '__main__':
     run_server = not args.refresh_only
 
     if run_refresh:
+        display_manager = DisplayManager(device_config)
+        refresh_task = RefreshTask(device_config, display_manager)
+        
+        app.config['DISPLAY_MANAGER'] = display_manager
+        app.config['REFRESH_TASK'] = refresh_task
+
         # start the background refresh task
         refresh_task.start()
 
