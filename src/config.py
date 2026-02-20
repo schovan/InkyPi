@@ -21,9 +21,28 @@ class Config:
 
     def __init__(self):
         self.config = self.read_config()
+        self.last_mtime = self._get_config_mtime()
         self.plugins_list = self.read_plugins_list()
         self.playlist_manager = self.load_playlist_manager()
         self.refresh_info = self.load_refresh_info()
+
+    def _get_config_mtime(self):
+        try:
+            return os.path.getmtime(self.config_file)
+        except OSError:
+            return 0
+
+    def check_and_reload(self):
+        current_mtime = self._get_config_mtime()
+        if current_mtime > self.last_mtime:
+            logger.info("Config file modification detected, reloading config.")
+            self.config = self.read_config()
+            self.playlist_manager = self.load_playlist_manager()
+            self.refresh_info = self.load_refresh_info()
+            self.plugins_list = self.read_plugins_list()
+            self.last_mtime = current_mtime
+            return True
+        return False
 
     def read_config(self):
         """Reads the device config JSON file and returns it as a dictionary."""
@@ -59,6 +78,7 @@ class Config:
         self.update_value("refresh_info", self.refresh_info.to_dict())
         with open(self.config_file, 'w') as outfile:
             json.dump(self.config, outfile, indent=4)
+        self.last_mtime = self._get_config_mtime()
 
     def get_config(self, key=None, default={}):
         """Gets the value of a specific configuration key or returns the entire config if none provided."""

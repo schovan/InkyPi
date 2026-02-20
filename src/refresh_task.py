@@ -84,6 +84,8 @@ class RefreshTask:
                     if not self.running:
                         break
 
+                    self.device_config.check_and_reload()
+
                     playlist_manager = self.device_config.get_playlist_manager()
                     latest_refresh = self.device_config.get_refresh_info()
                     current_dt = self._get_current_datetime()

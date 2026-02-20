@@ -40,6 +40,8 @@ logger = logging.getLogger(__name__)
 # Parse command line arguments
 parser = argparse.ArgumentParser(description='InkyPi Display Server')
 parser.add_argument('--dev', action='store_true', help='Run in development mode')
+parser.add_argument('--server-only', action='store_true', help='Run only the web server (no background refresh)')
+parser.add_argument('--refresh-only', action='store_true', help='Run only the background refresh task (no web server)')
 args = parser.parse_args()
 
 # Set development mode settings
@@ -85,33 +87,44 @@ app.register_blueprint(apikeys_bp)
 register_heif_opener()
 
 if __name__ == '__main__':
+    run_refresh = not args.server_only
+    run_server = not args.refresh_only
 
-    # start the background refresh task
-    refresh_task.start()
+    if run_refresh:
+        # start the background refresh task
+        refresh_task.start()
 
-    # display default inkypi image on startup
-    if device_config.get_config("startup") is True:
-        logger.info("Startup flag is set, displaying startup image")
-        img = generate_startup_image(device_config.get_resolution())
-        display_manager.display_image(img)
-        device_config.update_value("startup", False, write=True)
+        # display default inkypi image on startup
+        if device_config.get_config("startup") is True:
+            logger.info("Startup flag is set, displaying startup image")
+            img = generate_startup_image(device_config.get_resolution())
+            display_manager.display_image(img)
+            device_config.update_value("startup", False, write=True)
 
     try:
-        # Run the Flask app
-        app.secret_key = str(random.randint(100000,999999))
+        if run_server:
+            # Run the Flask app
+            app.secret_key = str(random.randint(100000,999999))
 
-        # Get local IP address for display (only in dev mode when running on non-Pi)
-        if DEV_MODE:
-            import socket
-            try:
-                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                s.connect(("8.8.8.8", 80))
-                local_ip = s.getsockname()[0]
-                s.close()
-                logger.info(f"Serving on http://{local_ip}:{PORT}")
-            except:
-                pass  # Ignore if we can't get the IP
+            # Get local IP address for display (only in dev mode when running on non-Pi)
+            if DEV_MODE:
+                import socket
+                try:
+                    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    s.connect(("8.8.8.8", 80))
+                    local_ip = s.getsockname()[0]
+                    s.close()
+                    logger.info(f"Serving on http://{local_ip}:{PORT}")
+                except:
+                    pass  # Ignore if we can't get the IP
 
-        serve(app, host="0.0.0.0", port=PORT, threads=1)
+            serve(app, host="0.0.0.0", port=PORT, threads=1)
+        else:
+            logger.info("Web server disabled by argument. Running refresh task in background.")
+            while True:
+                time.sleep(3600)
     finally:
-        refresh_task.stop()
+        if run_refresh:
+            refresh_task.stop()
+
+
