@@ -44,7 +44,7 @@ class RaspberryPi:
     DC_PIN   = 25
     CS_PIN   = 8
     BUSY_PIN = 24
-    PWR_PIN  = 18
+    PWR_PIN  = 27
     MOSI_PIN = 10
     SCLK_PIN = 11
 
@@ -57,7 +57,7 @@ class RaspberryPi:
         self.GPIO_DC_PIN     = gpiozero.LED(self.DC_PIN)
         # self.GPIO_CS_PIN     = gpiozero.LED(self.CS_PIN)
         self.GPIO_PWR_PIN    = gpiozero.LED(self.PWR_PIN)
-        self.GPIO_BUSY_PIN   = gpiozero.Button(self.BUSY_PIN, pull_up = False)
+        self.GPIO_BUSY_PIN   = gpiozero.InputDevice(self.BUSY_PIN, pull_up=False)
 
         
 

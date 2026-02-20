@@ -127,8 +127,10 @@ if __name__ == '__main__':
             serve(app, host="0.0.0.0", port=PORT, threads=1)
         else:
             logger.info("Web server disabled by argument. Running refresh task in background.")
-            while True:
-                time.sleep(3600)
+            import threading
+            threading.Event().wait()
+    except KeyboardInterrupt:
+        logger.info("Exiting...")
     finally:
         if run_refresh:
             refresh_task.stop()
